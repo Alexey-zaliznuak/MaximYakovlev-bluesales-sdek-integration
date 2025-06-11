@@ -91,7 +91,7 @@ def process_delayed_orders(new_orders: List[Order]):
         for order in orders:
             if (datetime.fromisoformat(order.delivered_date) - datetime.now()).days > 4:
                 status = CDEK.get_order_info(order.tracking_number)["entity"]["statuses"][0]["code"]
-                if status in ["POSTOMAT_RECEIVED", "DELIVERED",]:
+                if status not in ["POSTOMAT_RECEIVED", "DELIVERED",]:
                     order_contact_data = (
                         f"Айди клиента в вк: {order.customer_vk_id}, "
                         f"Айди группы переписки клиента в вк: {order.customer_vk_messages_group_id}, "
@@ -110,8 +110,8 @@ def process_delayed_orders(new_orders: List[Order]):
                     )
                     logger.debug("Результат отправки: " + str(result))
                     logger.info(f"Отправка уведомления что заказ ожидает уже 5 дней. {order_contact_data}")
-                    continue
 
+                continue  # после 4 дней, независимо - находится ли в пункте или забрал, заказ в памяти нам больше не нужен
             updated_orders.append(order)
 
         json.dump([o.__dict__ for o in updated_orders], f)
