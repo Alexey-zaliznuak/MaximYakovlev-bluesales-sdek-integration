@@ -63,7 +63,7 @@ def notify_that_orders_in_pvz(orders: List[Order]):
             user_id=order.customer_vk_id,
             # message=Settings.text_for_postomat if is_postomat else Settings.text_for_pvz,
             message=Settings.text_for_pvz,
-            random_id=int.from_bytes(os.getrandom(4), byteorder="big")
+            random_id=int.from_bytes(os.urandom(16), byteorder="big")
         )
         logger.debug("Результат отправки: " + str(result))
         logger.info(f"Отправка уведомления что заказ в пвз/постомате. {order_contact_data}")
@@ -77,10 +77,10 @@ def process_delayed_orders(new_orders: List[Order]):
 
     logger.info("\n=== Загрузка данных о доставленных заказах ===")
     with open(base_files_path + "delievered_dates.json", "w", encoding="utf-8") as f:
-        orders: list[dict] = json.load(f)
+        orders: list[dict] = json.load(f) # type: ignore
 
         for i, order in enumerate(orders):
-            orders[i] = Order(order["order"])
+            orders[i] = Order(order["order"]) # type: ignore
 
         for order in new_orders:
             order.delivered_date = datetime.now().isoformat()
@@ -105,8 +105,8 @@ def process_delayed_orders(new_orders: List[Order]):
                     vk = Settings.VK_CLIENTS_BY_GROUP_ID[order.customer_vk_messages_group_id]
                     result = vk.messages.send(
                         user_id=order.customer_vk_id,
-                        message=Settings.text,
-                        random_id=int.from_bytes(os.getrandom(4), byteorder="big")
+                        message=Settings.text_for_dont_forget_expriration,
+                        random_id=int.from_bytes(os.urandom(16), byteorder="big")
                     )
                     logger.debug("Результат отправки: " + str(result))
                     logger.info(f"Отправка уведомления что заказ ожидает уже 5 дней. {order_contact_data}")
