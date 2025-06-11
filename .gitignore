@@ -2,3 +2,4 @@
 /venv
 settings.py
 *.log
+__pycache__/
