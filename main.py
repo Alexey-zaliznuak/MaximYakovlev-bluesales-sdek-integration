@@ -18,7 +18,7 @@ from settings import Settings
 logger = logging.getLogger("root")
 logger.setLevel(logging.INFO)
 
-base_files_path = "./"
+base_files_path = "/home/alexey/projects/"
 
 file_handler = RotatingFileHandler(f"{base_files_path}log.log", maxBytes=64*1024, backupCount=3, encoding='utf-8')
 formatter = logging.Formatter('%(message)s')
