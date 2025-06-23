@@ -1,10 +1,13 @@
 # !/home/alexey/bluesales-cdek-transfering-integration/venv/bin/python
+
+# /home/alexey/projects/MaximYakovlev-bluesales-sdek-integration/venv/bin/python /home/alexey/projects/MaximYakovlev-bluesales-sdek-integration/main.py
 import json
 import logging
 import os
 from datetime import datetime, timedelta
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
+import random
 from time import sleep
 from typing import List
 
@@ -63,7 +66,8 @@ def notify_that_orders_in_pvz(orders: List[Order]):
             user_id=order.customer_vk_id,
             # message=Settings.text_for_postomat if is_postomat else Settings.text_for_pvz,
             message=Settings.text_for_pvz,
-            random_id=int.from_bytes(os.urandom(16), byteorder="big")
+            # random_id=int.from_bytes(os.urandom(8), byteorder="big")
+            random_id=int(random.getrandbits(63))
         )
         logger.debug("Результат отправки: " + str(result))
         logger.info(f"Отправка уведомления что заказ в пвз/постомате. {order_contact_data}")
@@ -76,16 +80,17 @@ def process_delayed_orders(new_orders: List[Order]):
         return
 
     logger.info("\n=== Загрузка данных о доставленных заказах ===")
-    with open(base_files_path + "delievered_dates.json", "w", encoding="utf-8") as f:
+    with open(base_files_path + "delievered_dates.json", "r", encoding="utf-8") as f:
         orders: list[dict] = json.load(f) # type: ignore
 
         for i, order in enumerate(orders):
-            orders[i] = Order(order["order"]) # type: ignore
+            orders[i] = Order({**order["order"], "delivered_date": order["delivered_date"]}) # type: ignore
+            # print(orders[i].delivered_date, orders[i].order, flush=True)
 
-        for order in new_orders:
-            order.delivered_date = datetime.now().isoformat()
+        for i in range(len(new_orders)):
+            new_orders[i].delivered_date = datetime.now().isoformat()
 
-        orders.extend(new_orders)
+        # orders.extend(new_orders)
         orders: list[Order] = orders
 
         for order in orders:
@@ -114,7 +119,8 @@ def process_delayed_orders(new_orders: List[Order]):
                 continue  # после 4 дней, независимо - находится ли в пункте или забрал, заказ в памяти нам больше не нужен
             updated_orders.append(order)
 
-        json.dump([o.__dict__ for o in updated_orders], f)
+    with open(base_files_path + "delievered_dates.json", "w", encoding="utf-8") as f:
+        json.dump([o.__dict__ for o in updated_orders], f, indent=4)
         logger.info("\n=== Уведомления с просьбой забрать заказ разосланы ===")
 
 def get_crm_status_by_cdek(current_crm_status: str, cdek_status_name: str):
@@ -125,7 +131,7 @@ def main(*args, **kwargs):
 
     for _ in range(3):
         try:
-            bluesales_orders = BLUESALES.orders.get_all(date_from=datetime.today() - timedelta(days=5))
+            bluesales_orders = BLUESALES.orders.get_all(date_from=datetime.today() - timedelta(days=60))
             break
         except BlueSalesError as e:
             print(e, "sleep 30 seconds...")
@@ -157,19 +163,23 @@ def main(*args, **kwargs):
 
             cdek_status = CDEK.get_order_info(order.tracking_number)["entity"]["statuses"][0]["code"]
 
+            logger.info(" ".join([str(order.id), cdek_status, "crm status: ", order.status_name, " -> ", Settings.INVERTED_STATUSES[get_crm_status_by_cdek(order.status_name, cdek_status)]]))
+
             if (
                 cdek_status != 'CREATED' and
                 Settings.STATUSES[order.status_name] != get_crm_status_by_cdek(order.status_name, cdek_status)  # статус поменялся
             ):
-                update_orders.append([order.id, get_crm_status_by_cdek(order.status_name, cdek_status), order.customer_id])  # для обновления времени
+                update_orders.append([order.id, get_crm_status_by_cdek(order.status_name, cdek_status)])  # для обновления времени
 
                 if get_crm_status_by_cdek(order.status_name, cdek_status) == Settings.STATUSES["Заказ выполнен"]:
                     is_postomat = cdek_status == "POSTOMAT_POSTED"
-                    orders_notify_that_order_in_pvz.append((order, is_postomat))
+                    orders_notify_that_order_in_pvz.append(order)
                     delayed_orders.append(order)
 
         except HTTPError as e:
-            logger.error(e)
+            pass
+            # {'requests': [{'type': 'GET', 'date_time': '2025-06-12T19:57:51+0000', 'state': 'INVALID', 'errors': [{'code': 'v2_order_not_found', 'additional_code': '0x7B234F39', 'message': 'Order not found by cdek_number 10118868207'}]}], 'related_entities': []}
+            # logger.error(e.response.json())
 
     BLUESALES.orders.set_many_statuses(update_orders)
 

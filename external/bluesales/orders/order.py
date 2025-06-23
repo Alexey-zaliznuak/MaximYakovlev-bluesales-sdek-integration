@@ -14,7 +14,7 @@ class Order:
         self.customer_vk_id = self.customer_vk.get("id", {}) if self.customer_vk else None
         self.customer_vk_messages_group_id = self.customer_vk.get("messagesGroupId", {}) if self.customer_vk else None
 
-        self.delivered_date = ""
+        self.delivered_date = order.get("delivered_date", "")
 
         self.tracking_number = None
         for custom_field in order.get('customFields', []):
