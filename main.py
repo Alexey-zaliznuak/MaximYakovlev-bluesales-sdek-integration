@@ -120,7 +120,7 @@ def process_delayed_orders(new_orders: List[Order]):
             updated_orders.append(order)
 
     with open(base_files_path + "delievered_dates.json", "w", encoding="utf-8") as f:
-        json.dump([o.__dict__ for o in updated_orders], f, indent=4)
+        json.dump([o.__dict__ for o in updated_orders], f, indent=4, ensure_ascii=False)
         logger.info("\n=== Уведомления с просьбой забрать заказ разосланы ===")
 
 def get_crm_status_by_cdek(current_crm_status: str, cdek_status_name: str):
