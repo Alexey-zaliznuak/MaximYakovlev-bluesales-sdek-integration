@@ -65,7 +65,7 @@ def notify_that_orders_in_pvz(orders: List[Order]):
         result = vk.messages.send(
             user_id=order.customer_vk_id,
             # message=Settings.text_for_postomat if is_postomat else Settings.text_for_pvz,
-            message=Settings.text_for_pvz,
+            message=Settings.text_for_pvz(),
             # random_id=int.from_bytes(os.urandom(8), byteorder="big")
             random_id=int(random.getrandbits(63))
         )
