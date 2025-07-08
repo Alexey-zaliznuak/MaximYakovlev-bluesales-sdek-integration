@@ -21,14 +21,12 @@ from settings import Settings
 logger = logging.getLogger("root")
 logger.setLevel(logging.INFO)
 
-base_files_path = "/home/alexey/projects/"
-
-file_handler = RotatingFileHandler(f"{base_files_path}log.log", maxBytes=64*1024, backupCount=3, encoding='utf-8')
+file_handler = RotatingFileHandler(f"{Settings.BASE_FILES_PATH}log.log", maxBytes=64*1024, backupCount=3, encoding='utf-8')
 formatter = logging.Formatter('%(message)s')
 file_handler.setFormatter(formatter)
 file_handler.setLevel(logging.INFO)
 
-full_file_handler = RotatingFileHandler(f"{base_files_path}full_log.log", maxBytes=256*1024, backupCount=3, encoding='utf-8')
+full_file_handler = RotatingFileHandler(f"{Settings.BASE_FILES_PATH}full_log.log", maxBytes=256*1024, backupCount=3, encoding='utf-8')
 full_file_handler.setFormatter(formatter)
 full_file_handler.setLevel(logging.DEBUG)
 
@@ -80,7 +78,7 @@ def process_delayed_orders(new_orders: List[Order]):
         return
 
     logger.info("\n=== Загрузка данных о доставленных заказах ===")
-    with open(base_files_path + "delievered_dates.json", "r", encoding="utf-8") as f:
+    with open(Settings.BASE_FILES_PATH + "delievered_dates.json", "r", encoding="utf-8") as f:
         orders: list[dict] = json.load(f) # type: ignore
 
         for i, order in enumerate(orders):
@@ -119,7 +117,7 @@ def process_delayed_orders(new_orders: List[Order]):
                 continue  # после 4 дней, независимо - находится ли в пункте или забрал, заказ в памяти нам больше не нужен
             updated_orders.append(order)
 
-    with open(base_files_path + "delievered_dates.json", "w", encoding="utf-8") as f:
+    with open(Settings.BASE_FILES_PATH + "delievered_dates.json", "w", encoding="utf-8") as f:
         json.dump([o.__dict__ for o in updated_orders], f, indent=4, ensure_ascii=False)
         logger.info("\n=== Уведомления с просьбой забрать заказ разосланы ===")
 
