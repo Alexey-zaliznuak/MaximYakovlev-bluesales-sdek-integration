@@ -163,7 +163,7 @@ def main(*args, **kwargs):
 
             cdek_status = CDEK.get_order_info(order.tracking_number)["entity"]["statuses"][0]["code"]
 
-            logger.info(" ".join([str(order.id), cdek_status, "crm status: ", order.status_name, " -> ", Settings.INVERTED_STATUSES[get_crm_status_by_cdek(order.status_name, cdek_status)]]))
+            # logger.debug(" ".join([str(order.id), order.tracking_number, cdek_status, "crm status: ", order.status_name, " -> ", Settings.INVERTED_STATUSES[get_crm_status_by_cdek(order.status_name, cdek_status)]]))
 
             if (
                 cdek_status != 'CREATED' and
@@ -178,6 +178,7 @@ def main(*args, **kwargs):
 
         except HTTPError as e:
             pass
+            # logger.error(f"Ошибка, {order.tracking_number}")
             # {'requests': [{'type': 'GET', 'date_time': '2025-06-12T19:57:51+0000', 'state': 'INVALID', 'errors': [{'code': 'v2_order_not_found', 'additional_code': '0x7B234F39', 'message': 'Order not found by cdek_number 10118868207'}]}], 'related_entities': []}
             # logger.error(e.response.json())
 
