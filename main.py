@@ -73,9 +73,9 @@ def notify_that_orders_in_pvz(orders: List[Order]):
 def process_delayed_orders(new_orders: List[Order]):
     updated_orders: list[Order] = []
 
-    if not (10 < datetime.now().hour + 3 < 15):
-        logger.info("\n=== Отложенные сообщения не рассматриваются из за времени ===")
-        return
+    # if not (10 < datetime.now().hour + 3 < 15):
+        # logger.info("\n=== Отложенные сообщения не рассматриваются из за времени ===")
+        # return
 
     logger.info("\n=== Загрузка данных о доставленных заказах ===")
     with open(Settings.BASE_FILES_PATH + "delievered_dates.json", "r", encoding="utf-8") as f:
@@ -88,11 +88,12 @@ def process_delayed_orders(new_orders: List[Order]):
         for i in range(len(new_orders)):
             new_orders[i].delivered_date = datetime.now().isoformat()
 
-        # orders.extend(new_orders)
+        orders.extend(new_orders)
         orders: list[Order] = orders
 
         for order in orders:
-            if (datetime.fromisoformat(order.delivered_date) - datetime.now()).days > 4:
+            print(datetime.now() - datetime.fromisoformat(order.delivered_date), (datetime.now() - datetime.fromisoformat(order.delivered_date)).days > 1)
+            if (datetime.now() - datetime.fromisoformat(order.delivered_date)).days > 4:
                 status = CDEK.get_order_info(order.tracking_number)["entity"]["statuses"][0]["code"]
                 if status not in ["POSTOMAT_RECEIVED", "DELIVERED",]:
                     order_contact_data = (
@@ -109,10 +110,10 @@ def process_delayed_orders(new_orders: List[Order]):
                     result = vk.messages.send(
                         user_id=order.customer_vk_id,
                         message=Settings.text_for_dont_forget_expriration,
-                        random_id=int.from_bytes(os.urandom(16), byteorder="big")
+                        random_id=int(random.getrandbits(63))
                     )
-                    logger.debug("Результат отправки: " + str(result))
                     logger.info(f"Отправка уведомления что заказ ожидает уже 5 дней. {order_contact_data}")
+                    logger.debug("Результат отправки: " + str(result))
 
                 continue  # после 4 дней, независимо - находится ли в пункте или забрал, заказ в памяти нам больше не нужен
             updated_orders.append(order)
